@@ -119,19 +119,19 @@ int append_data(BitFile &fpga_bit, char *append_str, bool flip, int verbose)
         else if(c >= 'A' && c <= 'F') addr = addr * 16 + c - 'A'+10;
         else if(c >= 'a' && c <= 'f') addr = addr * 16 + c - 'a'+10;
         else {
-            printf("Invalid address for appending data\n");
+            fprintf(stderr,"Invalid address for appending data\n");
             return 0;
         }
     }
     padding = addr - fpga_bit.getLength()/8;
-    if(padding < 0) { 
-        printf("Aborting - Appended data would overwrite FPGA bitstream\n");
+    if(padding < 0) {
+        fprintf(stderr, "Aborting - Appended data would overwrite FPGA bitstream\n");
         return 0;
-    } 
+    }
     if(verbose)
         printf("Appending file %s at address %X\n",append_str,addr);
 
-    if(padding > 0) 
+    if(padding > 0)
         fpga_bit.appendZeros(padding);
     fpga_bit.append(append_str,flip);
     if(verbose)
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
                     spi_options=ProgAlgSpi::FULL;
                     break;
                 default:
-                    printf("Unknown argument: \"%c\" to option: \"%c\"\n",c, optarg[0]);
+                    fprintf(stderr, "Unknown argument: \"%c\" to option: \"%c\"\n",c, optarg[0]);
                     usage(argv[0]);
             }
             break;
@@ -236,9 +236,7 @@ int main(int argc, char **argv)
             else if (isprint (optopt))
                 fprintf (stderr, "Unknown option `-%c'.\n", optopt);
             else
-                fprintf (stderr,
-                         "Unknown option character `\\x%x'.\n",
-                         optopt);
+                fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
             usage(argv[0]);
             return 1;
         default:
@@ -251,7 +249,7 @@ int main(int argc, char **argv)
         spiflash=true;
         if(spi_options!=ProgAlgSpi::ERASE_ONLY&&!cFpga_fn)
         {
-            printf("Please specify main bit file (-f <bitfile>)\n");
+            fprintf(stderr, "Please specify main bit file (-f <bitfile>)\n");
             return 1;
         }
 
@@ -259,7 +257,7 @@ int main(int argc, char **argv)
     else if( !cFpga_fn && !displaystatus && !detectchain && !reconfigure)
     {
         //no option specified
-        printf("No or ambiguous options specified.\n");
+        fprintf(stderr, "No or ambiguous options specified.\n");
         usage(argv[0]);
     }
     else
@@ -284,9 +282,10 @@ int main(int argc, char **argv)
 
     Jtag jtag = Jtag(io.operator->());
     unsigned int family, manufacturer;
-    fprintf(stderr, "Using %s\n", db.getFile().c_str());
+    if(verbose)
+      fprintf(stderr,"Using %s\n", db.getFile().c_str());
 
-    id = get_id (jtag, db, chainpos, true);
+    id = get_id (jtag, db, chainpos, verbose);
     family = (id>>21) & 0x7f;
     manufacturer = (id>>1) & 0x3ff;
     if(detectchain)
@@ -311,7 +310,8 @@ int main(int argc, char **argv)
             BitFile fpga_bit;
             fpga_bit.readFile(cBscan_fn);
             //fpga_bit.print();
-        
+
+            if(verbose)
             printf("\nUploading \"%s\". ", cBscan_fn);
             alg.array_program(fpga_bit);
 
@@ -326,24 +326,30 @@ int main(int argc, char **argv)
 
                 if(append_str && !append_data(flash_bit, append_str,append_flip, verbose)) /* Try to append data */
                     return 1;
-                
-                //flash_file.print();
+
+                if(verbose)
                 printf("\nProgramming External Flash Memory with \"%s\".\n", cFpga_fn);
                 result=alg1.ProgramSpi(flash_bit, spi_options);
+                if (reconfigure)
+                {
+                  alg.Reconfigure();
+                }
             }
             else
             {
+                if(verbose)
                 printf("Erasing External Flash Memory.\n");
                 result=alg1.EraseSpi();
             }
 
             if(!result)
-                printf("Error occured.\n");
+                fprintf(stderr, "Error occured.\n");
         }
         else
         {
             if(reconfigure)
             {
+                if(verbose)
                 printf("Triggering a reconfiguration of the FPGA.\n");
                 alg.Reconfigure();
                 return 0;
@@ -354,9 +360,12 @@ int main(int argc, char **argv)
             if(append_str && !append_data(fpga_bit, append_str, append_flip, verbose)) /* Try to append data */
                 return 1;
 
+            if(verbose)
+            {
             fpga_bit.print();
 
             printf("\nUploading \"%s\". ", cFpga_fn);
+            }
             alg.array_program(fpga_bit);
             return 0;
         }
