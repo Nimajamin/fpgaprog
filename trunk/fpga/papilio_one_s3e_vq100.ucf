@@ -1,0 +1,7 @@
+#Papilio One User Constraints File
+#CONFIG PART=XC3S250E-VQ100-4 ;
+CONFIG PART=XC3S500E-VQ100-4 ;
+NET "SPI_CS"    LOC = "P24"  ; 
+NET "SPI_SCK"   LOC = "P50"  ;
+NET "SPI_MOSI"  LOC = "P27"  ; 
+NET "SPI_MISO"  LOC = "P44"  ; 

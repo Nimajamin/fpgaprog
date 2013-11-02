@@ -47,6 +47,8 @@ Mike Field [hamster@snap.net.nz] 15 Oct 2012
 #include "jtag.h"
 #include "devicedb.h"
 #include "progalgxc3s.h"
+#include "binaryfile.h"
+#include "progalgsram.h"
 #include "progalgspi.h"
 #include "bitfile.h"
 
@@ -98,6 +100,9 @@ void usage(char *name)
       "   -b <bitfile>\t\tbscan_spi bit file (enables spi access via JTAG)\n"
       "   -s [e|v|p|a]\t\tSPI Flash options: e=Erase Only, v=Verify Only,\n"
       "               \t\tp=Program Only or a=ALL (Default)\n"
+      "   -B <bitfile>\t\tbscan_sram bit file (enables SRAM access via JTAG)\n"
+      "   -S [v|p|a]\t\tSRAM options: v=Verify Only,\n"
+      "               \t\tp=Program Only or a=ALL (Default)\n"
       "   -c\t\t\tDisplay current status of FPGA\n"
       "   -C\t\t\tDisplay STAT Register of FPGA\n"
       "   -r\t\t\tTrigger a reconfiguration of FPGA\n"
@@ -124,14 +129,14 @@ int append_data(BitFile &fpga_bit, char *append_str, bool flip, int verbose)
         }
     }
     padding = addr - fpga_bit.getLength()/8;
-    if(padding < 0) {
+    if(padding < 0) { 
         fprintf(stderr, "Aborting - Appended data would overwrite FPGA bitstream\n");
         return 0;
-    }
+    } 
     if(verbose)
         printf("Appending file %s at address %X\n",append_str,addr);
 
-    if(padding > 0)
+    if(padding > 0) 
         fpga_bit.appendZeros(padding);
     fpga_bit.append(append_str,flip);
     if(verbose)
@@ -147,6 +152,7 @@ int main(int argc, char **argv)
     unsigned int id;
     bool verbose = false;
     bool spiflash = false;
+    bool sram = false;
     bool reconfigure = false;
     bool detectchain = false;
     int displaystatus = 0; // 0=no status, 1=JTAG IR data, 2=STAT Register readback
@@ -158,15 +164,17 @@ int main(int argc, char **argv)
     char c;
     char *cFpga_fn=0;
     char *cBscan_fn=0;
+    char *cBscan_sram_fn=0;
     char *append_str = 0;
     bool append_flip = true;
     ProgAlgSpi::Spi_Options_t spi_options=ProgAlgSpi::FULL;
+    ProgAlgSram::Sram_Options_t sram_options=ProgAlgSram::FULL;
     DeviceDB db(devicedb);
 
     std::auto_ptr<IOBase>  io;
+    fprintf(stderr, "%s\n",PACKAGE_STRING);
 
-
-    while ((c = getopt (argc, argv, "hd:b:f:s:A:a:jvcCr")) != EOF)
+    while ((c = getopt (argc, argv, "hd:b:f:s:A:a:jvcCrB:S:")) != EOF)
         switch (c)
         {
         case 'r':
@@ -230,6 +238,30 @@ int main(int argc, char **argv)
                     usage(argv[0]);
             }
             break;
+        case 'B':
+            cBscan_sram_fn=(char*)malloc(strlen(optarg)+1);
+            strcpy(cBscan_sram_fn,optarg);
+            break;
+        case 'S':
+            switch(optarg[0])
+            {
+                case 'p':
+                case 'P':
+                    sram_options=ProgAlgSram::WRITE_ONLY;
+                    break;
+                case 'v':
+                case 'V':
+                    sram_options=ProgAlgSram::VERIFY_ONLY;
+                    break;
+                case 'a':
+                case 'A':
+                    sram_options=ProgAlgSram::FULL;
+                    break;
+                default:
+                    printf("Unknown argument: \"%c\" to option: \"%c\"\n",c, optarg[0]);
+                    usage(argv[0]);
+            }
+            break;
         case '?':
             if (optopt == 'i')
                 fprintf (stderr, "Option -%c requires an argument.\n", optopt);
@@ -254,10 +286,20 @@ int main(int argc, char **argv)
         }
 
     }
+    else if(cBscan_sram_fn)
+    {
+        sram=true;
+        if(!cFpga_fn)
+        {
+            printf("Please specify main bit file (-f <bitfile>)\n");
+            return 1;
+        }
+
+    }
     else if( !cFpga_fn && !displaystatus && !detectchain && !reconfigure)
     {
         //no option specified
-        fprintf(stderr, "No or ambiguous options specified.\n");
+        fprintf(stderr, "Missing or ambiguous options specified.\n");
         usage(argv[0]);
     }
     else
@@ -310,7 +352,7 @@ int main(int argc, char **argv)
             BitFile fpga_bit;
             fpga_bit.readFile(cBscan_fn);
             //fpga_bit.print();
-
+        
             if(verbose)
             printf("\nUploading \"%s\". ", cBscan_fn);
             alg.array_program(fpga_bit);
@@ -326,7 +368,7 @@ int main(int argc, char **argv)
 
                 if(append_str && !append_data(flash_bit, append_str,append_flip, verbose)) /* Try to append data */
                     return 1;
-
+                
                 if(verbose)
                 printf("\nProgramming External Flash Memory with \"%s\".\n", cFpga_fn);
                 result=alg1.ProgramSpi(flash_bit, spi_options);
@@ -345,7 +387,25 @@ int main(int argc, char **argv)
             if(!result)
                 fprintf(stderr, "Error occured.\n");
         }
-        else
+		else if(sram)
+		{
+            BitFile fpga_bit;
+            fpga_bit.readFile(cBscan_sram_fn);
+
+            printf("\nUploading \"%s\". ", cBscan_sram_fn);
+            alg.array_program(fpga_bit);
+
+            BinaryFile sram_bin;
+
+            ProgAlgSram alg1(jtag,io.operator*());
+
+            sram_bin.readFile(cFpga_fn, false);
+            result=alg1.ProgramSram(sram_bin, sram_options);
+
+            if(!result)
+                printf("Error occured.\n");
+		}
+		else
         {
             if(reconfigure)
             {

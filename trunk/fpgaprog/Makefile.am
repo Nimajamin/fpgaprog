@@ -7,6 +7,8 @@ papilio_prog_SOURCES = butterfly.cpp \
 	jtag.cpp \
 	progalgspi.cpp \
 	progalgxc3s.cpp \
+	progalgsram.cpp \
+	binaryfile.cpp \
 	tools.cpp \
 	ioftdi.cpp
 
