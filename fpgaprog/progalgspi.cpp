@@ -25,7 +25,7 @@ Changes:
 #include "config.h"
 
 #ifdef WINDOWS
-	#include <windows.h>
+  #include <windows.h>
 #else
   #define Sleep(ms) usleep((ms * 1000))
 #endif
@@ -79,7 +79,7 @@ void ProgAlgSpi::Spi_Command(const byte *tdi, byte *tdo, int length)
         memset(spi_out,0,bytes_s);
     }
     else
-    	spi_out = NULL;
+        spi_out = NULL;
     spi_in=(byte*)malloc(sizeof(byte)*bytes_s);
     memset(spi_in,0,bytes_s);
 
@@ -115,7 +115,7 @@ void ProgAlgSpi::Spi_SetCommand(const byte *command, byte *data, const int bytes
 }
 void ProgAlgSpi::Spi_SetCommandRW(const byte command, byte *data, const int address)
 {
-	// command length is 4 bytes...
+    // command length is 4 bytes...
     // 10 address bits
     // cccc cccc xxxx xppp pppp pppb bbbb bbbb
     // c=command bit
@@ -123,24 +123,24 @@ void ProgAlgSpi::Spi_SetCommandRW(const byte command, byte *data, const int addr
     // p=page address
     // b=byte address
     byte tmp[4];
-	int na, i;
+    int na, i;
     memset(tmp, 0, sizeof(tmp));
-	if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
-	{
-		na=address;
-		tmp[0]=command;
-		tmp[1]=(na&0xff0000)>>16;
-		tmp[2]=(na&0xff00)>>8;
-		tmp[3]=(na&0xff);		
-	}
-	else
-	{
-		na=(address << SpiAddressShift);
-		tmp[0]=command;
-		tmp[1]=(na&0x70000)>>16;
-		tmp[2]=(na&0xfe00)>>8;
-		tmp[3]=0;
-	}
+    if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
+    {
+        na=address;
+        tmp[0]=command;
+        tmp[1]=(na&0xff0000)>>16;
+        tmp[2]=(na&0xff00)>>8;
+        tmp[3]=(na&0xff);
+    }
+    else
+    {
+        na=(address << SpiAddressShift);
+        tmp[0]=command;
+        tmp[1]=(na&0x70000)>>16;
+        tmp[2]=(na&0xfe00)>>8;
+        tmp[3]=0;
+    }
 
     for(i=0;i<4;i++)
         data[i]=tmp[i];
@@ -208,9 +208,10 @@ bool ProgAlgSpi::Spi_Identify(bool verbose)
             }
             if(verbose)
                 printf("Found Macronix Flash (Pages=%d, Page Size=%d bytes, %d bits).\n",Pages,PageSize,Pages*PageSize*8);
-            break; 
+            break;
         case 0x20: /* Numonyx/Micron */
-            if (tdo[2] == 0xBA) { //N25QXXX
+            if (tdo[2] == 0xBA)
+            { //N25QXXX
                 switch(tdo[3])
                 {
                     case 0x16: /* N25Q32 */
@@ -248,13 +249,16 @@ bool ProgAlgSpi::Spi_Identify(bool verbose)
                 if(verbose)
                     printf("Found Numonyx/Micron Flash (Pages=%d, Page Size=%d bytes, %d bits).\n",Pages,PageSize,Pages*PageSize*8);
                 break;
-            } else {
+            }
+            else
+            {
                 printf("Unknown Numonyx/Micron Flash Type (0x%.2x)\n", tdo[2]);
                 return false;
             }
             break;
         case 0xef: /* Winbond */
-            if (tdo[2] == 0x30) { //W25X
+            if (tdo[2] == 0x30)
+            { //W25X
                 switch(tdo[3])
                 {
                     case 0x13: /* W25X40 */
@@ -271,7 +275,9 @@ bool ProgAlgSpi::Spi_Identify(bool verbose)
                 if(verbose)
                     printf("Found Winbond Flash (Pages=%d, Page Size=%d bytes, %d bits).\n",Pages,PageSize,Pages*PageSize*8);
                 break;
-            } else if (tdo[2] == 0x40) { //W25Q
+            }
+            else if (tdo[2] == 0x40)
+            { //W25Q
                 switch(tdo[3])
                 {
                     case 0x14: /* W25Q80 */
@@ -295,7 +301,9 @@ bool ProgAlgSpi::Spi_Identify(bool verbose)
                 if(verbose)
                     printf("Found Winbond Flash (Pages=%d, Page Size=%d bytes, %d bits).\n",Pages,PageSize,Pages*PageSize*8);
                 break;
-            } else {
+            }
+            else
+            {
                 printf("Unknown Winbond Flash Type (0x%.2x)\n", tdo[2]);
                 return false;
             }
@@ -334,7 +342,7 @@ bool ProgAlgSpi::Spi_Identify(bool verbose)
             }
             if(verbose)
                 printf("Found SST Flash (Pages=%d, Page Size=%d bytes, %d bits).\n",Pages,PageSize,Pages*PageSize*8);
-            break;			
+            break;
         default:
             printf("Uknown Flash Manufacturer (0x%.2x)\n", tdo[1]);
             return false;
@@ -355,21 +363,21 @@ bool ProgAlgSpi::Spi_Check(bool verbose)
     byte StatusReg_Val=0x80;
     byte StatusReg_Cmd[2]={0xd7,0x0};
 
-	if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
-	{
-		StatusReg_Mask=0x01;
-		StatusReg_Val=0x00;
-		StatusReg_Cmd[0]=0x05;
-		StatusReg_Cmd[1]=0x0;
-	}
+    if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
+    {
+        StatusReg_Mask=0x01;
+        StatusReg_Val=0x00;
+        StatusReg_Cmd[0]=0x05;
+        StatusReg_Cmd[1]=0x0;
+    }
 
-	Spi_Command(StatusReg_Cmd, tdo, 16);
-		if((tdo[1]&StatusReg_Mask) != StatusReg_Val)
-		{
-			if(verbose)
-				printf("Error: SPI Status Register [0x%02X] mismatch (Wrong device or device not ready)..\n",tdo[1]);
-			return false;
-		}
+    Spi_Command(StatusReg_Cmd, tdo, 16);
+        if((tdo[1]&StatusReg_Mask) != StatusReg_Val)
+        {
+            if(verbose)
+                printf("Error: SPI Status Register [0x%02X] mismatch (Wrong device or device not ready)..\n",tdo[1]);
+            return false;
+        }
     return true;
 }
 
@@ -380,261 +388,262 @@ bool ProgAlgSpi::Spi_Write_Check(bool verbose)
     byte StatusReg_Val=0x80;
     byte StatusReg_Cmd[2]={0xd7,0x0};
 
-	if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
-	{
-		StatusReg_Mask=0x1f;
-		StatusReg_Val=0x02;
-		StatusReg_Cmd[0]=0x05;
-		StatusReg_Cmd[1]=0x0;
-	}
+    if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
+    {
+        StatusReg_Mask=0x1f;
+        StatusReg_Val=0x02;
+        StatusReg_Cmd[0]=0x05;
+        StatusReg_Cmd[1]=0x0;
+    }
 
-	Spi_Command(StatusReg_Cmd, tdo, 16);
-		if((tdo[1]&StatusReg_Mask) != StatusReg_Val)
-		{
-			if(verbose)
-				printf("Error: SPI Write Check Status Register [0x%02X] mismatch (Wrong device or device not ready)..\n",tdo[1]);
-			return false;
-		}
+    Spi_Command(StatusReg_Cmd, tdo, 16);
+        if((tdo[1]&StatusReg_Mask) != StatusReg_Val)
+        {
+            if(verbose)
+                printf("Error: SPI Write Check Status Register [0x%02X] mismatch (Wrong device or device not ready)..\n",tdo[1]);
+            return false;
+        }
     return true;
 }
 
 bool ProgAlgSpi::Spi_Erase(bool verbose)
 {
-	unsigned int i,x;
-	bool fail=false;
-	byte data[4];
-	byte WRSR_Cmd[2]={0x01,0x00};
+    unsigned int i,x;
+    bool fail=false;
+    byte data[4];
+    byte WRSR_Cmd[2]={0x01,0x00};
 
-	if(verbose)
-	{	
-		printf("Erasing    :\n");
-		fflush(stdout);
-	}
-	if (FlashType==SSTFLASH)
-	{
-		fail=!Spi_Write_Check();
-		
-		Spi_Command((byte*)"\x06",0,8);	//WREN
-		Sleep(tCE);
-		Spi_Command((byte*)"\x80",0,8);	//DBSY
-		Sleep(tCE);
-		Spi_Command((byte*)"\x50",0,8);	//EWSR
-		Sleep(tCE);
-		Spi_Command(WRSR_Cmd,0,16);		//WRSR
-		Sleep(tCE);
-		Spi_Command((byte*)"\x06",0,8);	//WREN
-		Sleep(tCE);		
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Write_Check();
-			if(fail==false)
-				break;
-			Sleep(tCE);
-		}			
-		
-		Spi_Command((byte*)"\x60",0,8);	//Chip Erase
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Check();
-			if(fail==false)
-				break;
-			Sleep(tCE);
-		}	
+    if(verbose)
+    {
+        printf("Erasing    :\n");
+        fflush(stdout);
+    }
+    if (FlashType==SSTFLASH)
+    {
+        fail=!Spi_Write_Check();
 
-		if(verbose)
-		{
-			if(fail==false)
-				printf("Ok\n");
-			else
-				printf("Failed Erasing SST Flash.\n");
-		}			
-	}
-	else if (FlashType==MacronixFLASH){
+        Spi_Command((byte*)"\x06",0,8);    //WREN
+        Sleep(tCE);
+        Spi_Command((byte*)"\x80",0,8);    //DBSY
+        Sleep(tCE);
+        Spi_Command((byte*)"\x50",0,8);    //EWSR
+        Sleep(tCE);
+        Spi_Command(WRSR_Cmd,0,16);        //WRSR
+        Sleep(tCE);
+        Spi_Command((byte*)"\x06",0,8);    //WREN
+        Sleep(tCE);
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Write_Check();
+            if(fail==false)
+                break;
+            Sleep(tCE);
+        }
 
-		Spi_Command((byte*)"\x06",0,7);	//Write Enable
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Write_Check(verbose);
-			if(fail==false)
-				break;
-			Sleep(tCE);
-		}	
-		Spi_Command((byte*)"\x60",0,7);	//Chip Erase
-		for(x=0;x<=100;x++)
-		{
-			fail=!Spi_Check();
-			if(fail==false)
-				break;
-			Sleep(MacronixtCE);
-			printf(".");
-			fflush(stdout);
-		}	
+        Spi_Command((byte*)"\x60",0,8);    //Chip Erase
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Check();
+            if(fail==false)
+                break;
+            Sleep(tCE);
+        }
 
-		if(verbose)
-		{
-			if(fail==false)
-				printf("Ok\n");
-			else
-				printf("Failed Erasing Macronix Flash.\n");
-		}			
-	}
-	else if (FlashType==GENERIC){
-		Spi_Command((byte*)"\x06",0,7);	//Write Enable
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Write_Check(verbose);
-			if(fail==false)
-				break;
-			Sleep(tCE);
-		}
+        if(verbose)
+        {
+            if(fail==false)
+                printf("Ok\n");
+            else
+                printf("Failed Erasing SST Flash.\n");
+        }
+    }
+    else if (FlashType==MacronixFLASH)
+    {
+        Spi_Command((byte*)"\x06",0,7);    //Write Enable
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Write_Check(verbose);
+            if(fail==false)
+                break;
+            Sleep(tCE);
+        }
+        Spi_Command((byte*)"\x60",0,7);    //Chip Erase
+        for(x=0;x<=100;x++)
+        {
+            fail=!Spi_Check();
+            if(fail==false)
+                break;
+            Sleep(MacronixtCE);
+            printf(".");
+            fflush(stdout);
+        }
 
-		Spi_Command((byte*)"\xc7",0,7);	//Bulk Erase
-		for(x=0;x<=BulkErase;x++)
-		{
-			fail=!Spi_Check();
-			if(fail==false)
-				break;
-			Sleep(1000);
-			printf(".");
-			fflush(stdout);
-		}	
+        if(verbose)
+        {
+            if(fail==false)
+                printf("Ok\n");
+            else
+                printf("Failed Erasing Macronix Flash.\n");
+        }
+    }
+    else if (FlashType==GENERIC)
+    {
+        Spi_Command((byte*)"\x06",0,7);    //Write Enable
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Write_Check(verbose);
+            if(fail==false)
+                break;
+            Sleep(tCE);
+        }
 
-		if(verbose)
-		{
-			if(fail==false)
-				printf("Ok\n");
-			else
-				printf("Failed Erasing Generic Flash.\n");
-		}			
-	}
-	else
-	{
-		for(i=0;i<Pages&&!fail;i++)
-		{
-			memset(data,0, sizeof(data));
-			Spi_SetCommandRW('\x81',data,i);
+        Spi_Command((byte*)"\xc7",0,7);    //Bulk Erase
+        for(x=0;x<=BulkErase;x++)
+        {
+            fail=!Spi_Check();
+            if(fail==false)
+                break;
+            Sleep(1000);
+            printf(".");
+            fflush(stdout);
+        }
 
-			Spi_Command(data,0,32);
-			Sleep(tCE);		
-			for(x=0;x<=Max_Retries;x++)
-			{
-				fail=!Spi_Write_Check(verbose);
-				if(!fail)
-					break;
-				Sleep(tPE);
-			}
-			if((i%256)==0&&verbose)
-			{
-				printf(".");
-				fflush(stdout);
-			}
-		}
-		if(verbose)
-		{
-			if(!fail)
-				printf("Ok\n");
-			else
-				printf("Failed (@ Page: %d)\n", i);
-		}
-	}
+        if(verbose)
+        {
+            if(fail==false)
+                printf("Ok\n");
+            else
+                printf("Failed Erasing Generic Flash.\n");
+        }
+    }
+    else
+    {
+        for(i=0;i<Pages&&!fail;i++)
+        {
+            memset(data,0, sizeof(data));
+            Spi_SetCommandRW('\x81',data,i);
+
+            Spi_Command(data,0,32);
+            Sleep(tCE);
+            for(x=0;x<=Max_Retries;x++)
+            {
+                fail=!Spi_Write_Check(verbose);
+                if(!fail)
+                    break;
+                Sleep(tPE);
+            }
+            if((i%256)==0&&verbose)
+            {
+                printf(".");
+                fflush(stdout);
+            }
+        }
+        if(verbose)
+        {
+            if(!fail)
+                printf("Ok\n");
+            else
+                printf("Failed (@ Page: %d)\n", i);
+        }
+    }
 
     return !fail;
 }
 
 bool ProgAlgSpi::Spi_PartialErase(int length, bool verbose)
 {
-	unsigned int i,x;
-	bool fail=false;
-	byte data[4];
-	byte WRSR_Cmd[2]={0x01,0x00};
+    unsigned int i,x;
+    bool fail=false;
+    byte data[4];
+    byte WRSR_Cmd[2]={0x01,0x00};
 
-	if(verbose)
-	{	
-		printf("Erasing    :\n");
-		fflush(stdout);
-	}
-	if (FlashType==SSTFLASH)
-	{
+    if(verbose)
+    {
+        printf("Erasing    :\n");
+        fflush(stdout);
+    }
+    if (FlashType==SSTFLASH)
+    {
     // use full chip erase
-		fail=!Spi_Write_Check();
-		
-		Spi_Command((byte*)"\x06",0,8);	//WREN
-		Sleep(tCE);
-		Spi_Command((byte*)"\x80",0,8);	//DBSY
-		Sleep(tCE);
-		Spi_Command((byte*)"\x50",0,8);	//EWSR
-		Sleep(tCE);
-		Spi_Command(WRSR_Cmd,0,16);		//WRSR
-		Sleep(tCE);
-		Spi_Command((byte*)"\x06",0,8);	//WREN
-		Sleep(tCE);		
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Write_Check();
-			if(fail==false)
-				break;
-			Sleep(tCE);
-		}			
-		
-		Spi_Command((byte*)"\x60",0,8);	//Chip Erase
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Check();
-			if(fail==false)
-				break;
-			Sleep(tCE);
-		}	
+        fail=!Spi_Write_Check();
 
-		if(verbose)
-		{
-			if(fail==false)
-				printf("Ok\n");
-			else
-				printf("Failed Erasing SST Flash.\n");
-		}			
-	}
-	/*else if (FlashType==MacronixFLASH)
+        Spi_Command((byte*)"\x06",0,8);    //WREN
+        Sleep(tCE);
+        Spi_Command((byte*)"\x80",0,8);    //DBSY
+        Sleep(tCE);
+        Spi_Command((byte*)"\x50",0,8);    //EWSR
+        Sleep(tCE);
+        Spi_Command(WRSR_Cmd,0,16);        //WRSR
+        Sleep(tCE);
+        Spi_Command((byte*)"\x06",0,8);    //WREN
+        Sleep(tCE);
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Write_Check();
+            if(fail==false)
+                break;
+            Sleep(tCE);
+        }
+
+        Spi_Command((byte*)"\x60",0,8);    //Chip Erase
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Check();
+            if(fail==false)
+                break;
+            Sleep(tCE);
+        }
+
+        if(verbose)
+        {
+            if(fail==false)
+                printf("Ok\n");
+            else
+                printf("Failed Erasing SST Flash.\n");
+        }
+    }
+    else if (FlashType==MacronixFLASH)
   {
     // use full chip erase
-		Spi_Command((byte*)"\x06",0,7);	//Write Enable
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Write_Check(verbose);
-			if(fail==false)
-				break;
-			Sleep(tCE);
-		}	
-		Spi_Command((byte*)"\x60",0,7);	//Chip Erase
-		for(x=0;x<=100;x++)
-		{
-			fail=!Spi_Check();
-			if(fail==false)
-				break;
-			Sleep(MacronixtCE);
-			printf(".");
-			fflush(stdout);
-		}	
+        Spi_Command((byte*)"\x06",0,7);    //Write Enable
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Write_Check(verbose);
+            if(fail==false)
+                break;
+            Sleep(tCE);
+        }
+        Spi_Command((byte*)"\x60",0,7);    //Chip Erase
+        for(x=0;x<=100;x++)
+        {
+            fail=!Spi_Check();
+            if(fail==false)
+                break;
+            Sleep(MacronixtCE);
+            printf(".");
+            fflush(stdout);
+        }
 
-		if(verbose)
-		{
-			if(fail==false)
-				printf("Ok\n");
-			else
-				printf("Failed Erasing Macronix Flash.\n");
-		}			
-	} */
-	else if ((FlashType==MacronixFLASH) || (FlashType==GENERIC))
+        if(verbose)
+        {
+            if(fail==false)
+                printf("Ok\n");
+            else
+                printf("Failed Erasing Macronix Flash.\n");
+        }
+    }
+    else if (FlashType==GENERIC)
   {
     printf("Doing Partial Erase\n");
-    fflush(stdout);  
+    fflush(stdout);
     // use partial erase
     unsigned int wBytes=(length+7)/8;
-    unsigned int DoPages=(wBytes+PageSize-1)/PageSize;    
+    unsigned int DoPages=(wBytes+PageSize-1)/PageSize;
     for(i=0;i<DoPages&&!fail;i++)
     {
         if ((i*PageSize)%SectorSize == 0)
         {
-            Spi_Command((byte*)"\x06",0,7);	//Write Enable
+            Spi_Command((byte*)"\x06",0,7);    //Write Enable
             for(x=0;x<=Max_Retries;x++)
             {
                 fail=!Spi_Write_Check(verbose);
@@ -642,9 +651,9 @@ bool ProgAlgSpi::Spi_PartialErase(int length, bool verbose)
                     break;
                 Sleep(tCE);
             }
-            Spi_SetCommandRW('\xd8',data,i*PageSize);	//Sector Erase
+            Spi_SetCommandRW('\xd8',data,i*PageSize);    //Sector Erase
             Spi_Command(data,0,31);
-            Sleep(tCE);		
+            Sleep(tCE);
             for(x=0;x<=SectorErase;x++)
             {
                 fail=!Spi_Check();
@@ -658,46 +667,46 @@ bool ProgAlgSpi::Spi_PartialErase(int length, bool verbose)
             printf(".");
             fflush(stdout);
         }
-    }        
+    }
 
-		if(verbose)
-		{
-			if(fail==false)
-				printf("Ok\n");
-			else
-				printf("Failed Erasing Generic Flash.\n");
-		}			
-	}
-	else
-	{
-		for(i=0;i<Pages&&!fail;i++)
-		{
-			memset(data,0, sizeof(data));
-			Spi_SetCommandRW('\x81',data,i);
+        if(verbose)
+        {
+            if(fail==false)
+                printf("Ok\n");
+            else
+                printf("Failed Erasing Generic Flash.\n");
+        }
+    }
+    else
+    {
+        for(i=0;i<Pages&&!fail;i++)
+        {
+            memset(data,0, sizeof(data));
+            Spi_SetCommandRW('\x81',data,i);
 
-			Spi_Command(data,0,32);
-			Sleep(tCE);		
-			for(x=0;x<=Max_Retries;x++)
-			{
-				fail=!Spi_Write_Check(verbose);
-				if(!fail)
-					break;
-				Sleep(tPE);
-			}
-			if((i%256)==0&&verbose)
-			{
-				printf(".");
-				fflush(stdout);
-			}
-		}
-		if(verbose)
-		{
-			if(!fail)
-				printf("Ok\n");
-			else
-				printf("Failed (@ Page: %d)\n", i);
-		}
-	}
+            Spi_Command(data,0,32);
+            Sleep(tCE);
+            for(x=0;x<=Max_Retries;x++)
+            {
+                fail=!Spi_Write_Check(verbose);
+                if(!fail)
+                    break;
+                Sleep(tPE);
+            }
+            if((i%256)==0&&verbose)
+            {
+                printf(".");
+                fflush(stdout);
+            }
+        }
+        if(verbose)
+        {
+            if(!fail)
+                printf("Ok\n");
+            else
+                printf("Failed (@ Page: %d)\n", i);
+        }
+    }
 
     return !fail;
 }
@@ -710,156 +719,170 @@ bool ProgAlgSpi::Spi_Write(const byte *write_data, int length, bool verbose)
     unsigned int wBytes=(length+7)/8;
     unsigned int bufsize=sizeof(byte)*(PageSize+4);
     unsigned int DoPages=wBytes/PageSize;
-	byte WRSR_Cmd[2]={0x01,0x00};
-	byte AAIP_Cmd[6]={0xad,0x00,0x00,0x00,0xaa,0xaa};
-	
-	if (FlashType==SSTFLASH)
-	{
-		if(verbose)
-			printf("Programming :\n");
-		
-		Spi_Command((byte*)"\x06",0,8);	//WREN
-		Sleep(tCE);
-		Spi_Command((byte*)"\x80",0,8);	//DBSY
-		Sleep(tCE);
-		Spi_Command((byte*)"\x50",0,8);	//EWSR
-		Sleep(tCE);
-		Spi_Command(WRSR_Cmd,0,16);		//WRSR
-		Sleep(tCE);
-		Spi_Command((byte*)"\x06",0,8);	//WREN
-		Sleep(tCE);
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Check();
-			if(fail==false)
-				break;
-			Sleep(tCE);
-		}		
-		
-		memcpy(&AAIP_Cmd[4], &write_data[0],2);
-		
-		Spi_Command(AAIP_Cmd,0,48);
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Write_Check(verbose);
-			if(!fail)
-				break;
-			Sleep(tCE);
-		}
-		for(i=2;i<=wBytes&&!fail;i=i+2)
-		{
-			memcpy(&AAIP_Cmd[1], &write_data[i],2);
-			Spi_Command(AAIP_Cmd,0,24);
+    byte WRSR_Cmd[2]={0x01,0x00};
+    byte AAIP_Cmd[6]={0xad,0x00,0x00,0x00,0xaa,0xaa};
 
-			usleep(tBP);
+    if (FlashType==SSTFLASH)
+    {
+        if(verbose)
+        {
+            printf("Programming :\n");
+            fflush(stdout);
+        }
 
-			if((i%20000)==0&&verbose)
-			{
-				printf(".");			
-				fflush(stdout);
-			}
-		}
-	
-		printf("Finished Programming\n");
-		Spi_Command((byte*)"\x04",0,8);	//WRDI
-		
-		for(x=0;x<=Max_Retries;x++)
-		{
-			fail=!Spi_Check(verbose);
-			if(!fail)
-				break;
-			usleep(tBP);
-		}		
-	}
-	else
-	{
-		data=(byte*)malloc(bufsize);
+        Spi_Command((byte*)"\x06",0,8);    //WREN
+        Sleep(tCE);
+        Spi_Command((byte*)"\x80",0,8);    //DBSY
+        Sleep(tCE);
+        Spi_Command((byte*)"\x50",0,8);    //EWSR
+        Sleep(tCE);
+        Spi_Command(WRSR_Cmd,0,16);        //WRSR
+        Sleep(tCE);
+        Spi_Command((byte*)"\x06",0,8);    //WREN
+        Sleep(tCE);
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Check();
+            if(fail==false)
+                break;
+            Sleep(tCE);
+        }
 
-		// full Pages
-		if(verbose)
-			printf("Programming :\n");
-			fflush(stdout);
-		for(i=0;i<DoPages&&!fail;i++)
-		{
-			memset(data, 0, bufsize);
-			if ((FlashType==MacronixFLASH) || (FlashType==GENERIC)){
-				Spi_Command((byte*)"\x06",0,7);	//Write Enable
-				for(x=0;x<=Max_Retries;x++)
-				{
-					fail=!Spi_Write_Check(verbose);
-					if(fail==false)
-						break;
-					Sleep(tCE);
-				}	
-				Spi_SetCommandRW('\x02',data,i*PageSize);
-			}
-			else{
-				Spi_SetCommand((byte*)"\x84",data,1);
-			}
-			memcpy(&data[4], &write_data[PageSize*i],PageSize);
-			Spi_Command(data,0, 8*(bufsize)-1);
+        memcpy(&AAIP_Cmd[4], &write_data[0],2);
 
-			// Write buffer to mem
-			memset(data, 0, bufsize);
-			if (FlashType!=MacronixFLASH){
-				Spi_SetCommandRW('\x88',data,i);
-				Spi_Command(data,0,4*8);
-			}
-			for(x=0;x<=Max_Retries;x++)
-			{
-				fail=!Spi_Check();
-				if(!fail)
-					break;
-				Sleep(tP);
-			}
-			if((i%256)==0&&verbose)
-			{
-				printf(".");			
-				fflush(stdout);
-			}
+        Spi_Command(AAIP_Cmd,0,48);
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Write_Check(verbose);
+            if(!fail)
+                break;
+            Sleep(tCE);
+        }
+        for(i=2;i<=wBytes&&!fail;i=i+2)
+        {
+            memcpy(&AAIP_Cmd[1], &write_data[i],2);
+            Spi_Command(AAIP_Cmd,0,24);
 
-		}
+            for(x=0;x<=Max_Retries;x++)
+            {
+                fail=!Spi_Write_Check(verbose);
+                if(!fail)
+                    break;
+                Sleep(tBP);
+            }
+            if((i%20000)==0&&verbose)
+            {
+                printf(".");
+                fflush(stdout);
+            }
+        }
 
-		// partial Page
-		if(!fail&&(DoPages*PageSize)<wBytes)
-		{
-			int remBytes=(wBytes-DoPages*PageSize);
-			memset(data, 0, bufsize);
-			Spi_SetCommand((byte*)"\x84",data,1);
-			if ((FlashType==MacronixFLASH) || (FlashType==GENERIC)){
-				Spi_Command((byte*)"\x06",0,7);	//Write Enable
-				for(x=0;x<=Max_Retries;x++)
-				{
-					fail=!Spi_Write_Check(verbose);
-					if(fail==false)
-						break;
-					Sleep(tCE);
-				}	
-				Spi_SetCommandRW('\x02',data,i*PageSize);
-			}
-			else{
-				Spi_SetCommand((byte*)"\x84",data,1);
-			}
+        printf("Finished Programming\n");
+        Spi_Command((byte*)"\x04",0,8);    //WRDI
 
-			memcpy(&data[4], &write_data[PageSize*DoPages],remBytes);
-			Spi_Command(data,0, 8*(bufsize)-1);
+        for(x=0;x<=Max_Retries;x++)
+        {
+            fail=!Spi_Check(verbose);
+            if(!fail)
+                break;
+            usleep(tBP);
+        }
+    }
+    else
+    {
+        data=(byte*)malloc(bufsize);
 
-			// Write buffer to mem
-			memset(data, 0, bufsize);
-			if (FlashType!=MacronixFLASH){
-				Spi_SetCommandRW('\x88',data,DoPages);
-				Spi_Command(data,0,4*8);
-			}
+        // full Pages
+        if(verbose)
+            printf("Programming :\n");
+            fflush(stdout);
+        for(i=0;i<DoPages&&!fail;i++)
+        {
+            memset(data, 0, bufsize);
+            if ((FlashType==MacronixFLASH) || (FlashType==GENERIC))
+            {
+                Spi_Command((byte*)"\x06",0,7);    //Write Enable
+                for(x=0;x<=Max_Retries;x++)
+                {
+                    fail=!Spi_Write_Check(verbose);
+                    if(fail==false)
+                        break;
+                    Sleep(tCE);
+                }
+                Spi_SetCommandRW('\x02',data,i*PageSize);
+            }
+            else
+            {
+                Spi_SetCommand((byte*)"\x84",data,1);
+            }
+            memcpy(&data[4], &write_data[PageSize*i],PageSize);
+            Spi_Command(data,0, 8*(bufsize)-1);
 
-			for(x=0;x<=Max_Retries;x++)
-			{
-				fail=!Spi_Check();
-				if(!fail)
-					break;
-				Sleep(tP);
-			}
-		}
-	}
+            // Write buffer to mem
+            memset(data, 0, bufsize);
+            if (FlashType!=MacronixFLASH)
+            {
+                Spi_SetCommandRW('\x88',data,i);
+                Spi_Command(data,0,4*8);
+            }
+            for(x=0;x<=Max_Retries;x++)
+            {
+                fail=!Spi_Check();
+                if(!fail)
+                    break;
+                Sleep(tP);
+            }
+            if((i%256)==0&&verbose)
+            {
+                printf(".");
+                fflush(stdout);
+            }
+
+        }
+
+        // partial Page
+        if(!fail&&(DoPages*PageSize)<wBytes)
+        {
+            int remBytes=(wBytes-DoPages*PageSize);
+            memset(data, 0, bufsize);
+            Spi_SetCommand((byte*)"\x84",data,1);
+            if ((FlashType==MacronixFLASH) || (FlashType==GENERIC))
+            {
+                Spi_Command((byte*)"\x06",0,7);    //Write Enable
+                for(x=0;x<=Max_Retries;x++)
+                {
+                    fail=!Spi_Write_Check(verbose);
+                    if(fail==false)
+                        break;
+                    Sleep(tCE);
+                }
+                Spi_SetCommandRW('\x02',data,i*PageSize);
+            }
+            else
+            {
+                Spi_SetCommand((byte*)"\x84",data,1);
+            }
+
+            memcpy(&data[4], &write_data[PageSize*DoPages],remBytes);
+            Spi_Command(data,0, 8*(bufsize)-1);
+
+            // Write buffer to mem
+            memset(data, 0, bufsize);
+            if (FlashType!=MacronixFLASH)
+            {
+                Spi_SetCommandRW('\x88',data,DoPages);
+                Spi_Command(data,0,4*8);
+            }
+
+            for(x=0;x<=Max_Retries;x++)
+            {
+                fail=!Spi_Check();
+                if(!fail)
+                    break;
+                Sleep(tP);
+            }
+        }
+    }
     if(verbose)
     {
         if(!fail)
@@ -879,7 +902,7 @@ bool ProgAlgSpi::Spi_Verify(const byte *verify_data, int length, bool verbose)
     unsigned int wBytes=(length+7)/8;
     unsigned int bufsize=sizeof(byte)*(PageSize+4);
     unsigned int DoPages=wBytes/PageSize;
-	//unsigned int address;
+    //unsigned int address;
 
     data=(byte*)malloc(bufsize);
     tdo=(byte*)malloc(bufsize);
@@ -892,22 +915,22 @@ bool ProgAlgSpi::Spi_Verify(const byte *verify_data, int length, bool verbose)
         // Read from mem
         memset(data, 0, bufsize);
         memset(tdo, 0, bufsize);
-		if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
-			Spi_SetCommandRW('\x03',data,i*PageSize);
-		else
-			Spi_SetCommandRW('\x03',data,i);
+        if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
+            Spi_SetCommandRW('\x03',data,i*PageSize);
+        else
+            Spi_SetCommandRW('\x03',data,i);
 
         Spi_Command(data,tdo,(bufsize)*8);
         if(memcmp(&tdo[4],&verify_data[i*PageSize],PageSize))
-		{
+        {
             fail=true;
-			printf("Error in Verify: first byte of data [0x%02X] ..\n",tdo[4]);
-		}
+            printf("Error in Verify: first byte of data [0x%02X] ..\n",tdo[4]);
+        }
         if((i%256)==0&&verbose)
-			{
-				printf(".");			
-				fflush(stdout);
-			}
+            {
+                printf(".");
+                fflush(stdout);
+            }
     }
 
     // partial Page
@@ -917,10 +940,10 @@ bool ProgAlgSpi::Spi_Verify(const byte *verify_data, int length, bool verbose)
         // Read from mem
         memset(data, 0, bufsize);
         memset(tdo, 0, bufsize);
-		if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
-			Spi_SetCommandRW('\x03',data,DoPages*PageSize);
-		else
-			Spi_SetCommandRW('\x03',data,DoPages);
+        if ((FlashType==SSTFLASH) || (FlashType==MacronixFLASH) || (FlashType==GENERIC))
+            Spi_SetCommandRW('\x03',data,DoPages*PageSize);
+        else
+            Spi_SetCommandRW('\x03',data,DoPages);
 
         Spi_Command(data,tdo,(bufsize)*8);
         if(memcmp(&tdo[4],&verify_data[DoPages*PageSize],remBytes))
@@ -934,7 +957,7 @@ bool ProgAlgSpi::Spi_Verify(const byte *verify_data, int length, bool verbose)
         else
             printf("Failed (@ Page: %d)\n", i);
     }
-
+    fflush(stdout);
     return !fail;
 }
 
@@ -999,7 +1022,7 @@ bool ProgAlgSpi::ProgramSpi(BitFile &file, Spi_Options_t options)
         if(!Spi_PartialErase(file.getLength(), verbose))
             return false;
         byte *empty;
-        int emptylen=file.getLength()/8 + 1;
+        int emptylen=(file.getLength()+7)/8;
         empty=(byte*)malloc(emptylen);
         memset(empty, 0xff, emptylen);
         res=Spi_Verify(empty, file.getLength(), verbose);
